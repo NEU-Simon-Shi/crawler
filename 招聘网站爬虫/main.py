@@ -4,6 +4,7 @@ from boss import Boss
 import time
 import datetime
 
+
 def do_task(city, query):
     boss = Boss(city, query)
     boss.open_url()
@@ -14,7 +15,8 @@ def do_task(city, query):
     zhilian = Zhilian(city, query)
     zhilian.open_url()
 
-def timer(margin_hour = 6, margin_min = 5):
+
+def timer(margin_hour=6, margin_min=5):
     while True:
         while True:
             now = datetime.datetime.now()
@@ -26,7 +28,6 @@ def timer(margin_hour = 6, margin_min = 5):
         do_task('杭州', 'Java')
         time.sleep(60 * 60)
 
+
 if __name__ == '__main__':
     timer()
-
-

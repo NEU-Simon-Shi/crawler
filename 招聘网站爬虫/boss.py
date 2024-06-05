@@ -1,5 +1,5 @@
 import urllib.request
-from tools import getCityNumber,randomAgent
+from tools import getCityNumber, randomAgent
 import re
 import time
 import ssl
@@ -7,14 +7,14 @@ import pymysql
 import hashlib
 import requests
 
-#示例网址
-#https://www.zhipin.com/c101210100/h_100010000/?query=iOS&page=1
+# 示例网址
+# https://www.zhipin.com/c101210100/h_100010000/?query=iOS&page=1
 
-#关闭ssl安全验证
+# 关闭ssl安全验证
 ssl._create_default_https_context = ssl._create_unverified_context
-#忽略requests的警告
+# 忽略requests的警告
 requests.packages.urllib3.disable_warnings()
-#增加重试链接次数
+# 增加重试链接次数
 requests.adapters.DEFAULT_RETRIES = 5
 
 
@@ -42,12 +42,13 @@ class Boss(object):
             result:             待存入的子页面元组
 
     '''
-    def __init__(self, city, query, CONTENT_SIZE = 30):
+
+    def __init__(self, city, query, CONTENT_SIZE=30):
         self.CONTENT_SIZE = CONTENT_SIZE
         try:
             self.city = getCityNumber(city)
         except KeyError as err:
-            print('没有您要查找的地区',err,',已为您自动改为全国')
+            print('没有您要查找的地区', err, ',已为您自动改为全国')
             self.city = getCityNumber('全国')
 
         self.query = urllib.request.quote(query)
@@ -55,7 +56,7 @@ class Boss(object):
 
         self.__config_ip_agent()
         try:
-            self.conn = pymysql.connect(host = 'localhost', user = 'root', passwd = 'mac', db = 'Boss', charset = 'utf8')
+            self.conn = pymysql.connect(host='localhost', user='root', passwd='mac', db='Boss', charset='utf8')
         except Exception as err:
             print('数据库初始化失败')
             exit(1)
@@ -66,7 +67,7 @@ class Boss(object):
         orderno = 'DT20180423185056pK2Iqhve'
 
         ip_port = 'dynamic.xiongmaodaili.com:8088'
-        #proxy = {'http' : 'http://%s' % ip_port}
+        # proxy = {'http' : 'http://%s' % ip_port}
 
         timestamp = str(int(time.time()))
         txt = 'orderno=' + orderno + ',' + 'secret=' + secret + ',' + 'timestamp=' + timestamp
@@ -78,24 +79,26 @@ class Boss(object):
         auth = "sign=" + sign + "&" + "orderno=" + orderno + "&" + "timestamp=" + timestamp
 
         self.__proxy = {"http": "http://" + ip_port, "https": "https://" + ip_port}
-        self.__headers = {"Proxy-Authorization" : auth,
-                          'User-Agent' : randomAgent()}
+        self.__headers = {"Proxy-Authorization": auth,
+                          'User-Agent': randomAgent()}
 
     def open_url(self):
 
         try:
 
-            r = requests.get(url=self.url, headers=self.__headers, proxies=self.__proxy, verify=False,allow_redirects=False)
+            r = requests.get(url=self.url, headers=self.__headers, proxies=self.__proxy, verify=False,
+                             allow_redirects=False)
             content = r.content.decode('utf-8')
             count_url = r"(?<=data-rescount=\").+?(?=\")|(?<=data-rescount=\').+?(?=\')"
-            total = re.findall(count_url, content,  re.I|re.S|re.M)[0]
-            page_number = int((int(total) if int(total) % self.CONTENT_SIZE == 0 else (int(total) + self.CONTENT_SIZE)) / self.CONTENT_SIZE)
+            total = re.findall(count_url, content, re.I | re.S | re.M)[0]
+            page_number = int((int(total) if int(total) % self.CONTENT_SIZE == 0 else (
+                        int(total) + self.CONTENT_SIZE)) / self.CONTENT_SIZE)
             page_number = 10 if page_number > 10 else page_number
 
             self.traversal(page_number)
 
             self.read_db()
-            #print(content)
+            # print(content)
             self.conn.close()
 
         except Exception as err:
@@ -106,23 +109,23 @@ class Boss(object):
 
         self.__headers['User-Agent'] = randomAgent()
         try:
-            r = requests.get(url=url, headers=self.__headers, proxies=self.__proxy, verify=False,allow_redirects=False)
-            #print(r.status_code)
+            r = requests.get(url=url, headers=self.__headers, proxies=self.__proxy, verify=False, allow_redirects=False)
+            # print(r.status_code)
             if r.status_code == 200:
                 content = r.content.decode('utf-8')
 
                 match_reg = r'<div id="main">.*?<div class="info-primary">.*?' \
-                        r'<div class="name"><h1>(.*?)</h1>.*?<span class="badge">(.*?)</span></div>.*?' \
-                        r'<p>城市：(.*?)<em class="vline"></em>经验：(.*?)<em class="vline"></em>学历：(.*?)</p>.*?' \
-                        r'<div class="job-tags">\s+(.*?)\s+</div>.*?' \
-                        r'<h3>职位描述</h3>.*?<div class="text">\s+(.*?)\s+</div>'
-                result =  re.findall(match_reg, content, re.S | re.M)[0]
+                            r'<div class="name"><h1>(.*?)</h1>.*?<span class="badge">(.*?)</span></div>.*?' \
+                            r'<p>城市：(.*?)<em class="vline"></em>经验：(.*?)<em class="vline"></em>学历：(.*?)</p>.*?' \
+                            r'<div class="job-tags">\s+(.*?)\s+</div>.*?' \
+                            r'<h3>职位描述</h3>.*?<div class="text">\s+(.*?)\s+</div>'
+                result = re.findall(match_reg, content, re.S | re.M)[0]
 
                 self.__sub_memory(list(result))
         except Exception as err:
             print(self.open_sub_url.__name__ + " " + str(err))
 
-    def read_db(self, sql = 'select * from boss'):
+    def read_db(self, sql='select * from boss'):
 
         try:
             cursor = self.conn.cursor()
@@ -145,27 +148,27 @@ class Boss(object):
             try:
                 self.__headers['User-Agent'] = randomAgent()
                 url = self.url[:-1] + str(i)
-                r = requests.get(url=url, headers=self.__headers, proxies=self.__proxy, verify=False,allow_redirects=False)
+                r = requests.get(url=url, headers=self.__headers, proxies=self.__proxy, verify=False,
+                                 allow_redirects=False)
                 content = r.content.decode('utf-8')
                 match_reg = r'<div class="job-list">(.*?)<div class="page">'
-                match_str = re.findall(match_reg,content,re.S|re.M)[0]
-                #print(match_str)
+                match_str = re.findall(match_reg, content, re.S | re.M)[0]
+                # print(match_str)
                 res_reg = r'<li>.*?<a href="(.*?)".*?<div class="job-title">(.*?)</div>.*?<span class="red">(.*?)</span>.*?<a href=.*?>(.*?)</a>.*?</li>'
-                res_list = re.findall(res_reg,match_str,re.S|re.M)
+                res_list = re.findall(res_reg, match_str, re.S | re.M)
                 for message_tuple in res_list:
                     self.__memory(message_tuple=list(message_tuple))
-                if (i % (int(page_number / 2)) == 0) :
+                if (i % (int(page_number / 2)) == 0):
                     time.sleep(2)
             except Exception as err:
                 print(self.traversal.__name__ + " " + str(err))
         self.conn.commit()
 
-
-
     def __memory(self, message_tuple):
         message_tuple[0] = 'https://www.zhipin.com/' + message_tuple[0]
         sql = "insert into boss(link, jobtitle, salary, company) " \
-              "values('"+message_tuple[0]+"','"+message_tuple[1]+"','"+message_tuple[2]+"','"+message_tuple[3]+"')"
+              "values('" + message_tuple[0] + "','" + message_tuple[1] + "','" + message_tuple[2] + "','" + \
+              message_tuple[3] + "')"
         try:
             self.conn.query(sql=sql)
         except Exception as err:
@@ -173,20 +176,20 @@ class Boss(object):
 
     def __sub_memory(self, result):
 
-        jobtitle    = result[0]
-        salary      = result[1]
-        city        = result[2]
-        experience  = result[3]
-        education   = result[4]
+        jobtitle = result[0]
+        salary = result[1]
+        city = result[2]
+        experience = result[3]
+        education = result[4]
         brief_intro = result[5]
-        brief_intro = brief_intro.replace('<span>','')
-        brief_intro = brief_intro.replace('</span>',',')[:-1]
+        brief_intro = brief_intro.replace('<span>', '')
+        brief_intro = brief_intro.replace('</span>', ',')[:-1]
         job_descrip = result[6]
         job_descrip = job_descrip.replace('<br/><br/>', '\n')
         job_descrip = job_descrip.replace('<br/>', '\n')
 
         sql = "insert into detail_boss(jobtitle, salary, city, experience, education, brief_intro, job_descrip) " \
-              "values('"+jobtitle+"','"+salary+"','"+city+"','"+experience+"','"+education+"','"+brief_intro+"','"+job_descrip+"')"
+              "values('" + jobtitle + "','" + salary + "','" + city + "','" + experience + "','" + education + "','" + brief_intro + "','" + job_descrip + "')"
         try:
             self.conn.query(sql=sql)
             self.conn.commit()
@@ -201,7 +204,5 @@ class Boss(object):
 
 
 if __name__ == '__main__':
-
-    boss = Boss('杭州','Java')
+    boss = Boss('杭州', 'Java')
     boss.open_url()
-
