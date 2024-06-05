@@ -56,7 +56,7 @@ class Boss(object):
 
         self.__config_ip_agent()
         try:
-            self.conn = pymysql.connect(host='localhost', user='root', passwd='mac', db='Boss', charset='utf8')
+            self.conn = pymysql.connect(host='localhost', user='root', passwd='@Syhdq113', db='Boss', charset='utf8')
         except Exception as err:
             print('数据库初始化失败')
             exit(1)
@@ -78,7 +78,9 @@ class Boss(object):
 
         auth = "sign=" + sign + "&" + "orderno=" + orderno + "&" + "timestamp=" + timestamp
 
-        self.__proxy = {"http": "http://" + ip_port, "https": "https://" + ip_port}
+        # self.__proxy = {"http": "http://" + ip_port, "https": "https://" + ip_port} # https
+        self.__proxy = {"http": "http://" + ip_port}  # http
+
         self.__headers = {"Proxy-Authorization": auth,
                           'User-Agent': randomAgent()}
 
@@ -92,7 +94,7 @@ class Boss(object):
             count_url = r"(?<=data-rescount=\").+?(?=\")|(?<=data-rescount=\').+?(?=\')"
             total = re.findall(count_url, content, re.I | re.S | re.M)[0]
             page_number = int((int(total) if int(total) % self.CONTENT_SIZE == 0 else (
-                        int(total) + self.CONTENT_SIZE)) / self.CONTENT_SIZE)
+                    int(total) + self.CONTENT_SIZE)) / self.CONTENT_SIZE)
             page_number = 10 if page_number > 10 else page_number
 
             self.traversal(page_number)
